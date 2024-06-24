@@ -1,115 +1,93 @@
-import { join } from 'path'
-import { createBot, createProvider, createFlow, addKeyword, utils } from '@builderbot/bot'
-import { MemoryDB as Database } from '@builderbot/bot'
-import { BaileysProvider as Provider } from '@builderbot/provider-baileys'
+import { createBot, createProvider, createFlow, addKeyword, utils } from '@builderbot/bot';
+import { MemoryDB as Database } from '@builderbot/bot';
+import { BaileysProvider as Provider } from '@builderbot/provider-baileys';
 
-const PORT = process.env.PORT ?? 3008
+const PORT = process.env.PORT ?? 3008;
 
-const discordFlow = addKeyword<Provider, Database>('doc').addAnswer(
-    ['You can see the documentation here', '📄 https://builderbot.app/docs \n', 'Do you want to continue? *yes*'].join(
-        '\n'
-    ),
-    { capture: true },
-    async (ctx, { gotoFlow, flowDynamic }) => {
-        if (ctx.body.toLocaleLowerCase().includes('yes')) {
-            return gotoFlow(registerFlow)
-        }
-        await flowDynamic('Thanks!')
-        return
-    }
-)
-
-const welcomeFlow = addKeyword<Provider, Database>(['hi', 'hello', 'hola'])
-    .addAnswer(`🙌 Hello welcome to this *Chatbot*`)
+// Flujo de bienvenida
+const welcomeFlow = addKeyword<Provider, Database>(['-hi', '-hello', '-hola'])
+    .addAnswer(`🙌 Hello! Welcome to this Chatbot. Choose an option below:`)
     .addAnswer(
         [
-            'I share with you the following links of interest about the project',
-            '👉 *doc* to view the documentation',
+            '1️⃣ *Type 1* for Flow 1',
+            '2️⃣ *Type 2* for Flow 2',
         ].join('\n'),
-        { delay: 800, capture: true },
-        async (ctx, { fallBack }) => {
-            if (!ctx.body.toLocaleLowerCase().includes('doc')) {
-                return fallBack('You should type *doc*')
+        { capture: true },
+        async (ctx, { gotoFlow }) => {
+            const choice = ctx.body.trim();
+            if (choice === '1') {
+                return gotoFlow(flow1); // Redirige al Flujo 1
+            } else if (choice === '2') {
+                return gotoFlow(flow2); // Redirige al Flujo 2
             }
-            return
-        },
-        [discordFlow]
-    )
+            return; // Si no es 1 o 2, permanece en el flujo de bienvenida
+        }
+    );
 
-const registerFlow = addKeyword<Provider, Database>(utils.setEvent('REGISTER_FLOW'))
-    .addAnswer(`What is your name?`, { capture: true }, async (ctx, { state }) => {
-        await state.update({ name: ctx.body })
-    })
-    .addAnswer('What is your age?', { capture: true }, async (ctx, { state }) => {
-        await state.update({ age: ctx.body })
-    })
-    .addAction(async (_, { flowDynamic, state }) => {
-        await flowDynamic(`${state.get('name')}, thanks for your information!: Your age: ${state.get('age')}`)
-    })
+// Flujo 1
+const flow1 = addKeyword<Provider, Database>('flow1')
+    .addAnswer('Welcome to Flow 1! 🌟')
+    .addAnswer('Type *back* to return to the Welcome message.', { capture: true }, async (ctx, { gotoFlow }) => {
+        if (ctx.body.toLocaleLowerCase() === 'back') {
+            return gotoFlow(welcomeFlow); // Regresa al flujo de bienvenida
+        }
+        return; // Permanece en el flujo 1 si no se escribe 'back'
+    });
 
-const fullSamplesFlow = addKeyword<Provider, Database>(['samples', utils.setEvent('SAMPLES')])
-    .addAnswer(`💪 I'll send you a lot files...`)
-    .addAnswer(`Send image from Local`, { media: join(process.cwd(), 'assets', 'sample.png') })
-    .addAnswer(`Send video from URL`, {
-        media: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYTJ0ZGdjd2syeXAwMjQ4aWdkcW04OWlqcXI3Ynh1ODkwZ25zZWZ1dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/LCohAb657pSdHv0Q5h/giphy.mp4',
-    })
-    .addAnswer(`Send audio from URL`, { media: 'https://cdn.freesound.org/previews/728/728142_11861866-lq.mp3' })
-    .addAnswer(`Send file from URL`, {
-        media: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    })
+// Flujo 2
+const flow4 = addKeyword<Provider, Database>('flow4')
+    .addAnswer('Welcome to Flow 4! ✨')
+    .addAnswer('Type *back* to return to the Welcome message.', { capture: true }, async (ctx, { gotoFlow }) => {
+        console.log(ctx);
+        if (ctx.body.toLocaleLowerCase() === 'back') {
+            return gotoFlow(flow2); // Regresa al flujo de bienvenida
+        }
+        return; // Permanece en el flujo 2 si no se escribe 'back'
+    });
+
+// Flujo 2
+const flow3 = addKeyword<Provider, Database>('flow3')
+    .addAnswer('Welcome to Flow 3! ✨')
+    .addAnswer('Type *back* to return to the Welcome message.', { capture: true }, async (ctx, { gotoFlow }) => {
+        if (ctx.body.toLocaleLowerCase() === 'back') {
+            return gotoFlow(flow2); // Regresa al flujo de bienvenida
+        }
+        return; // Permanece en el flujo 2 si no se escribe 'back'
+    });
+const flow2 = addKeyword<Provider, Database>(['-hi', '-hello', '-hola'])
+    .addAnswer(`🙌 Hello! Welcome to flow 2. Choose an option below:`)
+    .addAnswer(
+        [
+            '1️⃣ *Type 1* for Flow 4',
+            '2️⃣ *Type 2* for Flow 3',
+        ].join('\n'),
+        { capture: true },
+        async (ctx, { gotoFlow }) => {
+            const choice = ctx.body.trim();
+            if (choice === '1') {
+                return gotoFlow(flow4); // Redirige al Flujo 1
+            } else if (choice === '2') {
+                return gotoFlow(flow3); // Redirige al Flujo 2
+            } else if (choice === 'Back') {
+                return gotoFlow(welcomeFlow);
+            }
+            return; // Si no es 1 o 2, permanece en el flujo de bienvenida
+        }
+    );
+
 
 const main = async () => {
-    const adapterFlow = createFlow([welcomeFlow, registerFlow, fullSamplesFlow])
-    
-    const adapterProvider = createProvider(Provider)
-    const adapterDB = new Database()
+    const adapterFlow = createFlow([welcomeFlow, flow1, flow2, flow4]);
+    const adapterProvider = createProvider(Provider);
+    const adapterDB = new Database();
 
     const { handleCtx, httpServer } = await createBot({
         flow: adapterFlow,
         provider: adapterProvider,
         database: adapterDB,
-    })
+    });
 
-    adapterProvider.server.post(
-        '/v1/messages',
-        handleCtx(async (bot, req, res) => {
-            const { number, message, urlMedia } = req.body
-            await bot.sendMessage(number, message, { media: urlMedia ?? null })
-            return res.end('sended')
-        })
-    )
+    httpServer(+PORT);
+};
 
-    adapterProvider.server.post(
-        '/v1/register',
-        handleCtx(async (bot, req, res) => {
-            const { number, name } = req.body
-            await bot.dispatch('REGISTER_FLOW', { from: number, name })
-            return res.end('trigger')
-        })
-    )
-
-    adapterProvider.server.post(
-        '/v1/samples',
-        handleCtx(async (bot, req, res) => {
-            const { number, name } = req.body
-            await bot.dispatch('SAMPLES', { from: number, name })
-            return res.end('trigger')
-        })
-    )
-
-    adapterProvider.server.post(
-        '/v1/blacklist',
-        handleCtx(async (bot, req, res) => {
-            const { number, intent } = req.body
-            if (intent === 'remove') bot.blacklist.remove(number)
-            if (intent === 'add') bot.blacklist.add(number)
-
-            res.writeHead(200, { 'Content-Type': 'application/json' })
-            return res.end(JSON.stringify({ status: 'ok', number, intent }))
-        })
-    )
-
-    httpServer(+PORT)
-}
-
-main()
+main();
